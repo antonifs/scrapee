@@ -46,11 +46,19 @@ class Monitoring(models.Model):
         return self.store_name
 
 class Category(models.Model):
-
     category = models.CharField(max_length=100)
+    category_parent = models.CharField(max_length=100, null=True)
+    level = models.IntegerField(default=1)
     cat_url = models.CharField(max_length=1000)
     status = models.IntegerField(choices=URL_STATUS_CHOICES)
     monitoring = models.ForeignKey(Monitoring, blank=True, null=True)
+    block_tag = models.CharField(max_length=100, null=True)
+    block_attribute = models.CharField(max_length=100, null=True)
+    block_value = models.CharField(max_length=100, null=True)
+    item_tag = models.CharField(max_length=100, null=True)
+    item_attribute = models.CharField(max_length=100, null=True)
+    item_value = models.CharField(max_length=100, null=True)
+    total_pagination = models.IntegerField(null=True)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
 
@@ -60,6 +68,26 @@ class Category(models.Model):
 
     def __unicode__(self):
         return self.category
+
+class ParentCategoryManager(models.Manager):
+    def get_queryset(self):
+        return super(ParentCategoryManager, self).get_queryset().filter(level=1)
+
+class ParentCategory(Category):
+    class Meta:
+        proxy = True
+
+    objects = ParentCategoryManager()
+
+class SubcategoryManager(models.Manager):
+    def get_queryset(self):
+        return super(SubcategoryManager, self).get_queryset().filter(level=2)
+
+class Subcategory(Category):
+    class Meta:
+        proxy = True
+
+    objects = SubcategoryManager()
 
 class Url(models.Model):
 
@@ -94,9 +122,9 @@ class Item(models.Model):
     color = models.CharField(max_length=255, blank=True, null=True)
     fabric = models.CharField(max_length=255, blank=True, null=True)
     currency = models.IntegerField()
-    is_scrapped = models.IntegerField(blank=True, null=True)
+    is_scrapped = models.IntegerField(blank=True, null=True, max_length=3)
     is_sold = models.IntegerField(blank=True, null=True)
-    status = models.IntegerField(choices=ITEM_STATUS_CHOICES)
+    status = models.IntegerField(choices=ITEM_STATUS_CHOICES, max_length=3)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
 
