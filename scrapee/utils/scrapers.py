@@ -52,6 +52,79 @@ def scraper_content(url):
             "image_5": image_5,
     }
 
+def scraper_mage_download():
+    import urllib
+    import os
 
-def scraper_mage_upload():
-    return "image yay"
+    # Get item target, sort item ascending (oldest) then get the top one
+    item = Item.objects.filter(is_image_scraped=False, is_scraped=True).order_by('id').first()
+
+    if item:
+
+        # number image(s) want to download
+        img_num = 0
+
+        media_root = settings.MEDIA_ROOT + '/import/'
+        dir = str(item.title.replace(" ", "_"))
+        directory = media_root + dir
+
+        # create directory to store the images
+        is_directory = os.path.exists(directory)
+        if not os.path.exists(is_directory):
+            os.makedirs(directory)
+
+        # image collections
+        img_url_1 = item.image_1
+        img_url_2 = item.image_2
+        img_url_3 = item.image_3
+        img_url_4 = item.image_4
+        img_url_5 = item.image_5
+
+        if not img_url_1 == "":
+            img_name_1 = item.title.replace(" ", "_") + "_1" + "." + str(item.image_1.split("/")[-1]).split(".")[-1]
+            img_num += 1
+            try:
+                urllib.urlretrieve(img_url_1, directory + '/' + img_name_1)
+            except:
+                pass
+
+        if not img_url_2 == "":
+            img_name_2 = item.title.replace(" ", "_") + "_2" + "." + str(item.image_2.split("/")[-1]).split(".")[-1]
+            img_num += 1
+            try:
+                urllib.urlretrieve(img_url_2, directory + '/' + img_name_2)
+            except:
+                pass
+
+        if not img_url_3 == "":
+            img_name_3 = item.title.replace(" ", "_") + "_3" + "." + str(item.image_3.split("/")[-1]).split(".")[-1]
+            img_num += 1
+            try:
+                urllib.urlretrieve(img_url_3, directory + '/' + img_name_3)
+            except:
+                pass
+
+        if not img_url_4 == "":
+            img_name_4 = item.title.replace(" ", "_") + "_4" + "." + str(item.image_4.split("/")[-1]).split(".")[-1]
+            img_num += 1
+            try:
+                urllib.urlretrieve(img_url_4, directory + '/' + img_name_4)
+            except:
+                pass
+
+        if not img_url_5 == "":
+            img_name_5 = item.title.replace(" ", "_") + "_5" + "." + str(item.image_5.split("/")[-1]).split(".")[-1]
+            img_num += 1
+            try:
+                urllib.urlretrieve(img_url_5, directory + '/' + img_name_5)
+            except:
+                pass
+
+        item.image_name_1 = img_name_1
+        item.image_name_2 = img_name_2
+        item.image_name_3 = img_name_3
+        item.image_name_4 = img_name_4
+        item.image_name_5 = img_name_5
+        item.directory = dir
+        item.is_image_scraped = True
+        item.save()

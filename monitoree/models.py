@@ -22,7 +22,7 @@ URL_STATUS_CHOICES = (
 )
 
 ITEM_STATUS_CHOICES = (
-    (1, 'Draft'),
+    (0, True),
     (2, 'Scraped'),
     (3, 'Ignore'),
 )
@@ -122,11 +122,19 @@ class Item(models.Model):
     color = models.CharField(max_length=255, blank=True, null=True)
     fabric = models.CharField(max_length=255, blank=True, null=True)
     currency = models.IntegerField()
-    is_scrapped = models.IntegerField(blank=True, null=True, max_length=3)
+    is_scraped = models.BooleanField()
     is_sold = models.IntegerField(blank=True, null=True)
-    status = models.IntegerField(choices=ITEM_STATUS_CHOICES, max_length=3)
+    status = models.IntegerField(choices=ITEM_STATUS_CHOICES)
+    brand = models.CharField(max_length=100, null=True)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
+    is_image_scraped = models.BooleanField()
+    directory = models.CharField(null=True, max_length=255)
+    image_name_1 = models.CharField(max_length=255, blank=True, null=True)
+    image_name_2 = models.CharField(max_length=255, blank=True, null=True)
+    image_name_3 = models.CharField(max_length=255, blank=True, null=True)
+    image_name_4 = models.CharField(max_length=255, blank=True, null=True)
+    image_name_5 = models.CharField(max_length=255, blank=True, null=True)
 
     @property
     def short_url(self):

@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'monitoree',
     'djcelery',
+    'dashing',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -129,6 +130,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Django-dashing
+# DASHING = {
+#     'INSTALLED_WIDGETS': ('number', 'list', 'graph', 'Knob',),
+#     'PERMISSION_CLASSES':  (
+#         'dashing.permissions.IsAuthenticated',
+#     )
+# }
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
@@ -147,3 +156,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = 'static/'
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media")

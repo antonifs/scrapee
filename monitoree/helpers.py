@@ -44,3 +44,13 @@ def get_all_attributeset(token):
     payload = {'access_token': token}
     r = requests.get(url, params=payload)
     return r.json()
+
+def upload_product(data):
+    url = 'http://tnklst.click/internalapi/scraper/createitem'
+    r = requests.post(url, data=data)
+    return r.json()
+
+def get_brand_id(brand):
+    url = 'http://tnklst.click/internalapi/oauth2/punten?brand_name=' + brand
+    r = requests.get(url)
+    return r.json()
