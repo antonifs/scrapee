@@ -189,18 +189,14 @@ def scraper_mage_upload():
         server_src = '/var/www/html/magento/media/import/'
 
         # Production server
-        # os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + staging_src + item.directory +' root@tinkerlust.com:' + server_src + item.directory)
-
-        # Staging server
-
         logger.info("Rsyncing ... ")
-        local_src = '/Users/antonifs/Documents/tinkerlust/store_scraper/media/import/'
-        os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + local_src + item.directory +' root@tnklst.click:' + staging_src + item.directory)
+        os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + staging_src + item.directory +' root@tinkerlust.com:' + server_src + item.directory)
         logger.info("Done Rsyncing")
 
-        params = {
-            'access_token': access_token,
-        }
+        # Staging server
+        # local_src = '/Users/antonifs/Documents/tinkerlust/store_scraper/media/import/'
+        # os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + local_src + item.directory +' root@tnklst.click:' + staging_src + item.directory)
+
         data = {
                 'name'              : item.title,
                 'attribute_set_id'  : att_set_id,
