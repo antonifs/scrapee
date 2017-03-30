@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from scrapee import settings
 
 def crawl(domain, tag, attr, attr_val):
     r = requests.get(domain)
@@ -25,7 +26,6 @@ def crawl2(domain,
 def download_image(src):
     pass
 
-
 def download_content(url):
     pass
 
@@ -35,22 +35,22 @@ def convert_money(money):
     return Decimal(sub(r'[^\d.]', '', money))
 
 def get_token():
-    url = 'http://tnklst.click/internalapi/oauth2/punten?client_id=87e7fd65fe9d937690b78da26971914a&client_secret=ccc7eab1a464cec1cb8658adb883df31'
+    url = settings.API_DOMAIN + 'internalapi/oauth2/punten?client_id=87e7fd65fe9d937690b78da26971914a&client_secret=ccc7eab1a464cec1cb8658adb883df31'
     r = requests.get(url)
     return r.json()
 
 def get_all_attributeset(token):
-    url = 'http://tnklst.click/internalapi/scraper/attributeset'
+    url = settings.API_DOMAIN + 'internalapi/scraper/attributeset'
     payload = {'access_token': token}
     r = requests.get(url, params=payload)
     return r.json()
 
 def upload_product(data):
-    url = 'http://tnklst.click/internalapi/scraper/createitem'
+    url = settings.API_DOMAIN + 'internalapi/scraper/createitem'
     r = requests.post(url, data=data)
     return r.json()
 
 def get_brand_id(brand):
-    url = 'http://tnklst.click/internalapi/oauth2/punten?brand_name=' + brand
+    url = settings.API_DOMAIN + 'internalapi/oauth2/punten?brand_name=' + brand
     r = requests.get(url)
     return r.json()

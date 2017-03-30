@@ -2,10 +2,12 @@ from celery.task.schedules import crontab
 from celery.decorators import periodic_task
 from scrapee.utils import scrapers
 from celery.utils.log import get_task_logger
+from scrapee import settings
 
+import requests
 import helpers
 
-from .models import Monitoring, Category, Item, Url
+from models import Monitoring, Category, Item, Url
 
 logger = get_task_logger(__name__)
 
@@ -33,8 +35,10 @@ def scraper_content():
 
             # Save the content
             Item(title = object['product_name'],
-                url = url.url,
+                url = str(url.url),
                 price = helpers.convert_money(object["price"]),
+                status = 1,
+                currency = 1,
                 image_1 = object['image_1'],
                 image_2 = object['image_2'],
                 image_3 = object['image_3'],
@@ -43,13 +47,12 @@ def scraper_content():
                 category_raw = "".join(category).replace("-", " "),
                 sub_category_raw = "".join(sub_category).replace("-", " "),
                 is_sold = 1,
-                status = 1,
                 brand = object['brand'],
                 condition = object["condition"],
-                currency = 1,
-                is_scrapped = True,
-
+                is_scraped = True,
+                is_image_scraped = False,
             ).save()
+
             logger.info("%s scraped and was saved" % url.id)
         except:
             pass
@@ -75,12 +78,11 @@ def scraper_image_download():
         img_num = 0
 
         media_root = settings.MEDIA_ROOT + '/import/'
-        dir = str(item.title.replace(" ", "_"))
+        dir = str(item.title.replace(" ", "_").encode('utf-8'))
         directory = media_root + dir
 
         # create directory to store the images
-        is_directory = os.path.exists(directory)
-        if not os.path.exists(is_directory):
+        if not os.path.exists(directory):
             os.makedirs(directory)
 
         # image collections
@@ -97,6 +99,8 @@ def scraper_image_download():
                 urllib.urlretrieve(img_url_1, directory + '/' + img_name_1)
             except:
                 pass
+        else:
+            img_name_1 = ""
 
         if not img_url_2 == "":
             img_name_2 = item.title.replace(" ", "_") + "_2" + "." + str(item.image_2.split("/")[-1]).split(".")[-1]
@@ -105,6 +109,8 @@ def scraper_image_download():
                 urllib.urlretrieve(img_url_2, directory + '/' + img_name_2)
             except:
                 pass
+        else:
+            img_name_2 = ""
 
         if not img_url_3 == "":
             img_name_3 = item.title.replace(" ", "_") + "_3" + "." + str(item.image_3.split("/")[-1]).split(".")[-1]
@@ -113,6 +119,8 @@ def scraper_image_download():
                 urllib.urlretrieve(img_url_3, directory + '/' + img_name_3)
             except:
                 pass
+        else:
+            img_name_3 = ""
 
         if not img_url_4 == "":
             img_name_4 = item.title.replace(" ", "_") + "_4" + "." + str(item.image_4.split("/")[-1]).split(".")[-1]
@@ -121,6 +129,8 @@ def scraper_image_download():
                 urllib.urlretrieve(img_url_4, directory + '/' + img_name_4)
             except:
                 pass
+        else:
+            img_name_4 = ""
 
         if not img_url_5 == "":
             img_name_5 = item.title.replace(" ", "_") + "_5" + "." + str(item.image_5.split("/")[-1]).split(".")[-1]
@@ -129,6 +139,8 @@ def scraper_image_download():
                 urllib.urlretrieve(img_url_5, directory + '/' + img_name_5)
             except:
                 pass
+        else:
+            img_name_5 = ""
 
         item.image_name_1 = img_name_1
         item.image_name_2 = img_name_2
@@ -165,13 +177,26 @@ def scraper_mage_upload():
         att_set_id = attributeset['data'][att_set]
 
         item = Item.objects.filter(is_image_scraped=True, is_scraped=True).order_by('id').first()
-        url = "http://tnklst.click/internalapi/scraper/searchbrand?brand="+ item.brand +"&access_token="+ access_token
-        brand_obj = requests.get(url)
+        url_search_brand =  settings.API_DOMAIN + "internalapi/scraper/searchbrand?brand="+ str(item.brand) +"&access_token="+ access_token
+        logger.info("URL Brand: %s" % url_search_brand)
+        brand_obj = requests.get(url_search_brand)
         brand = brand_obj.json()
-        brand_id = brand[item.brand]
+        logger.info("Brand: %s" % brand)
+        brand_id = brand['data'][str(item.brand)]
 
         # Rsync the product
-        os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress /var/www/html/magento/media/import/' + item.directory +' root@tinkerlust.com:/var/www/html/magento/media/import/' + item.directory)
+        staging_src = '/var/www/html/magento/media/import/'
+        server_src = '/var/www/html/magento/media/import/'
+
+        # Production server
+        # os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + staging_src + item.directory +' root@tinkerlust.com:' + server_src + item.directory)
+
+        # Staging server
+
+        logger.info("Rsyncing ... ")
+        local_src = '/Users/antonifs/Documents/tinkerlust/store_scraper/media/import/'
+        os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + local_src + item.directory +' root@tnklst.click:' + staging_src + item.directory)
+        logger.info("Done Rsyncing")
 
         params = {
             'access_token': access_token,

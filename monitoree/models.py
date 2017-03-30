@@ -108,11 +108,11 @@ class Url(models.Model):
 class Item(models.Model):
 
     title = models.CharField(max_length=255)
-    url = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=9, decimal_places=2)
+    url = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     category = models.ForeignKey(Category, blank=True, null=True)
-    category_raw = models.CharField(max_length=100, blank=True, null=True)
-    sub_category_raw = models.CharField(max_length=100, blank=True, null=True)
+    category_raw = models.CharField(max_length=255, blank=True, null=True)
+    sub_category_raw = models.CharField(max_length=255, blank=True, null=True)
     condition = models.CharField(max_length=255, blank=True, null=True)
     image_1 = models.CharField(max_length=255)
     image_2 = models.CharField(max_length=255)

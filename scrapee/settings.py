@@ -160,3 +160,6 @@ STATIC_ROOT = 'static/'
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media")
+
+# API_DOMAIN = 'https://tinkerlust.com/'
+API_DOMAIN = 'http://tnklst.click/'
