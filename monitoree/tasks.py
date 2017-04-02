@@ -6,6 +6,7 @@ from scrapee import settings
 
 import requests
 import helpers
+import os
 
 from models import Monitoring, Category, Item, Url
 
@@ -22,10 +23,12 @@ def scraper_content():
     - Write the result to Item table
     - Update url object status to scraped (2)
     '''
-    url = Url.objects.filter(status=1).order_by('-id').first()
+    url = Url.objects.filter(status=1).order_by('id').first()
 
     if url:
         logger.info("Scraper is started.")
+
+        # scrap the html content
         object = scrapers.scraper_content(url.url)
 
         try:
@@ -33,27 +36,31 @@ def scraper_content():
             category = url.url.split("/")[-3:-2]
             sub_category = url.url.split("/")[-2:-1]
 
-            # Save the content
-            Item(title = object['product_name'],
-                url = str(url.url),
-                price = helpers.convert_money(object["price"]),
-                status = 1,
-                currency = 1,
-                image_1 = object['image_1'],
-                image_2 = object['image_2'],
-                image_3 = object['image_3'],
-                image_4 = object['image_4'],
-                image_5 = object['image_5'],
-                category_raw = "".join(category).replace("-", " "),
-                sub_category_raw = "".join(sub_category).replace("-", " "),
-                is_sold = 1,
-                brand = object['brand'],
-                condition = object["condition"],
-                is_scraped = True,
-                is_image_scraped = False,
-            ).save()
+            if not Item.objects.filter(url=str(url.url)).exists():
 
-            logger.info("%s scraped and was saved" % url.id)
+                # Save the content
+                Item(title = object['product_name'],
+                    url = str(url.url),
+                    price = helpers.convert_money(object["price"]),
+                    status = 1,
+                    currency = 1,
+                    image_1 = object['image_1'],
+                    image_2 = object['image_2'],
+                    image_3 = object['image_3'],
+                    image_4 = object['image_4'],
+                    image_5 = object['image_5'],
+                    category_raw = "".join(category).replace("-", " "),
+                    sub_category_raw = "".join(sub_category).replace("-", " "),
+                    is_sold = 1,
+                    brand = object['brand'],
+                    condition = object["condition"],
+                    is_scraped = True,
+                    is_image_scraped = False,
+                ).save()
+
+                logger.info("%s scraped and was saved" % url.id)
+            else:
+                logger.info("Item is existed")
         except:
             pass
 
@@ -65,12 +72,72 @@ def scraper_content():
         logger.info("Nothing can be scraped")
 
 @periodic_task(run_every=(crontab(hour="*", minute="*", day_of_week="*")))
+def scraper_mage_upload():
+
+    import os
+
+    item = Item.objects.filter(status=1).order_by('id').first()
+
+    if item:
+
+        token = helpers.get_token()
+
+        access_token = token['access_token']
+
+        # Convert attributeset from target standard to tinkerlust standard
+        attribute_set = {
+            'bags' : 'Tas',
+            'accessories' : 'Aksesoris',
+            'shoes' : 'Sepatu',
+        }
+
+        att_set = attribute_set[str(item.category_raw)]
+        attributeset = helpers.get_all_attributeset(token['access_token'])
+        att_set_id = attributeset['data'][att_set]
+
+        url_search_brand =  settings.API_DOMAIN + "internalapi/scraper/searchbrand?brand="+ str(item.brand) +"&access_token="+ access_token
+        logger.info("URL Brand: %s" % url_search_brand)
+        brand_obj = requests.get(url_search_brand)
+        brand = brand_obj.json()
+        logger.info("Brand: %s" % brand)
+        brand_id = brand['data'][str(item.brand)]
+
+        data = {
+                'name'              : item.title,
+                'attribute_set_id'  : att_set_id,
+                'weight'            : 3,
+                'color'             : [9,7],
+                'price'             : item.price,
+                'description'       : '-',
+                'short_description' : '-',
+                'vendor_attribute'  : 2554,
+                'vendor_category'   : 2501, # Rainbob -> bobobo
+                'fabric'            : 3,
+                'condition'         : 2,
+                'category_1'        : att_set_id,
+                'category_2'        : 5,
+                'brand_id'          : brand_id,
+                'source'            : 'bobobobo',
+                'access_token'      : access_token,
+        }
+
+        res = helpers.upload_product(data)
+
+        logger.info("%s has been upload to Magento" % res)
+
+        item.sku = str(res['data'][u'sku'])
+        item.status = 2
+        item.save()
+    else:
+        logger.info("Nothing can be uploaded")
+
+@periodic_task(run_every=(crontab(hour="*", minute="*", day_of_week="*")))
 def scraper_image_download():
     import urllib
     import os
 
     # Get item target, sort item ascending (oldest) then get the top one
-    item = Item.objects.filter(is_image_scraped=False, is_scraped=True).order_by('id').first()
+    item = Item.objects.filter(status=2).order_by('id').first()
 
     if item:
 
@@ -78,7 +145,7 @@ def scraper_image_download():
         img_num = 0
 
         media_root = settings.MEDIA_ROOT + '/import/'
-        dir = str(item.title.replace(" ", "_").encode('utf-8'))
+        dir = str(item.sku.replace(" ", "_").encode('utf-8'))
         directory = media_root + dir
 
         # create directory to store the images
@@ -93,7 +160,7 @@ def scraper_image_download():
         img_url_5 = item.image_5
 
         if not img_url_1 == "":
-            img_name_1 = item.title.replace(" ", "_") + "_1" + "." + str(item.image_1.split("/")[-1]).split(".")[-1]
+            img_name_1 = helpers.get_new_name(item.sku, item.image_1, '1')
             img_num += 1
             try:
                 urllib.urlretrieve(img_url_1, directory + '/' + img_name_1)
@@ -103,7 +170,7 @@ def scraper_image_download():
             img_name_1 = ""
 
         if not img_url_2 == "":
-            img_name_2 = item.title.replace(" ", "_") + "_2" + "." + str(item.image_2.split("/")[-1]).split(".")[-1]
+            img_name_2 = helpers.get_new_name(item.sku, item.image_2, '2')
             img_num += 1
             try:
                 urllib.urlretrieve(img_url_2, directory + '/' + img_name_2)
@@ -113,7 +180,7 @@ def scraper_image_download():
             img_name_2 = ""
 
         if not img_url_3 == "":
-            img_name_3 = item.title.replace(" ", "_") + "_3" + "." + str(item.image_3.split("/")[-1]).split(".")[-1]
+            img_name_3 = helpers.get_new_name(item.sku, item.image_3, '3')
             img_num += 1
             try:
                 urllib.urlretrieve(img_url_3, directory + '/' + img_name_3)
@@ -123,7 +190,7 @@ def scraper_image_download():
             img_name_3 = ""
 
         if not img_url_4 == "":
-            img_name_4 = item.title.replace(" ", "_") + "_4" + "." + str(item.image_4.split("/")[-1]).split(".")[-1]
+            img_name_4 = helpers.get_new_name(item.sku, item.image_4, '4')
             img_num += 1
             try:
                 urllib.urlretrieve(img_url_4, directory + '/' + img_name_4)
@@ -133,7 +200,7 @@ def scraper_image_download():
             img_name_4 = ""
 
         if not img_url_5 == "":
-            img_name_5 = item.title.replace(" ", "_") + "_5" + "." + str(item.image_5.split("/")[-1]).split(".")[-1]
+            img_name_5 = helpers.get_new_name(item.sku, item.image_5, '5')
             img_num += 1
             try:
                 urllib.urlretrieve(img_url_5, directory + '/' + img_name_5)
@@ -149,78 +216,69 @@ def scraper_image_download():
         item.image_name_5 = img_name_5
         item.directory = dir
         item.is_image_scraped = True
+        item.status = 3
         item.save()
+
+        logger.info("%s is downloaded." % item)
 
 
 @periodic_task(run_every=(crontab(hour="*", minute="*", day_of_week="*")))
-def scraper_mage_upload():
+def scraper_upload_images():
 
-    import os
-
-    item = Item.objects.filter(status=1).order_by('id').first()
+    # Get item which the images have been scraped
+    item = Item.objects.filter(status=3).order_by('id').first()
 
     if item:
 
         token = helpers.get_token()
-
         access_token = token['access_token']
 
-        # Converter
-        attribute_set = {
-            'bags' : 'Tas',
-            'accessories' : 'Aksesoris',
-            'shoes' : 'Sepatu',
-        }
-
-        att_set = attribute_set[str(item.category_raw)]
-        attributeset = helpers.get_all_attributeset(token['access_token'])
-        att_set_id = attributeset['data'][att_set]
-
-        item = Item.objects.filter(is_image_scraped=True, is_scraped=True).order_by('id').first()
-        url_search_brand =  settings.API_DOMAIN + "internalapi/scraper/searchbrand?brand="+ str(item.brand) +"&access_token="+ access_token
-        logger.info("URL Brand: %s" % url_search_brand)
-        brand_obj = requests.get(url_search_brand)
-        brand = brand_obj.json()
-        logger.info("Brand: %s" % brand)
-        brand_id = brand['data'][str(item.brand)]
+        logger.info("Token: %s access token: %s" % (token, access_token))
 
         # Rsync the product
         staging_src = '/var/www/html/magento/media/import/'
         server_src = '/var/www/html/magento/media/import/'
 
-        # Production server
         logger.info("Rsyncing ... ")
-        os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + staging_src + item.directory +' root@tinkerlust.com:' + server_src + item.directory)
+
+        # Production server environment
+        # origin = staging_src + item.directory
+        # target = server_src + item.directory
+
+        # origin = local_src + item.directory
+        # target = staging_src + item.directory
+        # os.system('rsync -r -v -e "ssh -i $HOME/.ssh/tinkerlust" '+ str(origin) +' root@tinkerlust.com:' + str(target) + '/')
+
+        # Staging server environment
+        local_src = '/Users/antonifs/Documents/tinkerlust/store_scraper/media/import/'
+
+        origin = local_src + item.directory
+        target = staging_src
+
+        logger.info("Target: %s" % target)
+
+        os.system('rsync -r -v -e "ssh -i $HOME/tinkerstaging" '+ str(origin) +' root@tnklst.click:' + str(target) + '/')
+
         logger.info("Done Rsyncing")
 
-        # Staging server
-        # local_src = '/Users/antonifs/Documents/tinkerlust/store_scraper/media/import/'
-        # os.system('rsync -avz -e "ssh -o StrictHostKeyChecking=no \ -o UserKnownHostsFile=/dev/null" --progress ' + local_src + item.directory +' root@tnklst.click:' + staging_src + item.directory)
+        d = str(origin)
+        lsdir = os.listdir(d)
+        image_count = len(lsdir)
 
-        data = {
-                'name'              : item.title,
-                'attribute_set_id'  : att_set_id,
-                'weight'            : 3,
-                'color'             : [9,7],
-                'price'             : item.price,
-                'description'       : '-',
-                'short_description' : '-',
-                'vendor_attribute'  : 298,
-                'vendor_category'   : 2667,
-                'fabric'            : 3,
-                'condition'         : 2,
-                'category_1'        : att_set_id,
-                'category_2'        : 5,
-                'brand_id'          : brand_id,
-                'source'            : 'bobobobo',
-                'access_token'      : access_token,
+        data_image = {
+            'access_token': str(access_token),
+            'sku': str(item.sku),
+            'image_count': image_count
         }
 
-        res = helpers.upload_product(data);
+        logger.info("Data: %s" % data_image)
 
-        logger.info("Upload to Mage: %s " % res)
+        res = helpers.upload_images(data_image)
 
-        item.status = 2
+        logger.info("%s uploaded to Magento media" % res)
+
+        item.status = 5
         item.save()
+
     else:
-        logger.info("Nothing can be uploaded")
+        logger.info("No item is uploaded")

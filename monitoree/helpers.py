@@ -29,28 +29,46 @@ def download_image(src):
 def download_content(url):
     pass
 
+
+# this tool will replace all formated-money with type string into a proper decimal
 def convert_money(money):
     from re import sub
     from decimal import Decimal
     return Decimal(sub(r'[^\d.]', '', money))
 
 def get_token():
-    url = settings.API_DOMAIN + 'internalapi/oauth2/punten?client_id=87e7fd65fe9d937690b78da26971914a&client_secret=ccc7eab1a464cec1cb8658adb883df31'
+    url = settings.API_DOMAIN + settings.API_GET_TOKEN + '?' \
+            'client_id=' + settings.CLIENT_ID + '' \
+            '&client_secret=' + settings.CLIENT_SECRET
     r = requests.get(url)
     return r.json()
 
 def get_all_attributeset(token):
-    url = settings.API_DOMAIN + 'internalapi/scraper/attributeset'
-    payload = {'access_token': token}
-    r = requests.get(url, params=payload)
+    url = settings.API_DOMAIN + settings.API_GET_ATTRIBUTESET + '?access_token=' + token
+    r = requests.get(url)
     return r.json()
 
 def upload_product(data):
-    url = settings.API_DOMAIN + 'internalapi/scraper/createitem'
+    url = settings.API_DOMAIN + settings.API_CREATE_ITEM
     r = requests.post(url, data=data)
     return r.json()
 
-def get_brand_id(brand):
-    url = settings.API_DOMAIN + 'internalapi/oauth2/punten?brand_name=' + brand
+def get_brand_id(brand, token):
+    url = settings.API_DOMAIN + settings.API_GET_BRAND + '?brand=' + brand + '' \
+            '&access_token=' + token
     r = requests.get(url)
     return r.json()
+
+def upload_images(data):
+    url = settings.API_DOMAIN + settings.API_ADD_IMAGE
+    r = requests.post(url, data=data)
+    return r.json()
+
+# get the extension of a path
+def get_image_extention(original_path):
+    return str(original_path.split("/")[-1]).split(".")[-1]
+
+
+# the name consists of SKU_number.extension, extension taken from original extension file
+def get_new_name(sku, original_path, number):
+    return sku.replace(" ", "_") + "_" + number + "." + get_image_extention(original_path)

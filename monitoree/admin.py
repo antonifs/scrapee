@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Category, Item, Monitoring, Url, ParentCategory, Subcategory
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.humanize.templatetags.humanize import intcomma
 
 from .helpers import crawl, crawl2
 
@@ -93,6 +94,32 @@ def fetch_url_item(self, request, queryset):
 
     self.message_user(request, "%s successfully fetched." % total)
 
+def set_to_draft(self, request, queryset):
+    for q in queryset:
+        if Url.objects.filter(id=q.id).exists():
+            obj = Url.objects.filter(id=q.id).first()
+            obj.status = 1
+            obj.save()
+
+def set_to_scraped(self, request, queryset):
+    for q in queryset:
+        if Url.objects.filter(id=q.id).exists():
+            obj = Url.objects.filter(id=q.id).first()
+            obj.status = 2
+            obj.save()
+
+def set_to_item_created(self, request, queryset):
+    for q in queryset:
+        if Item.objects.filter(id=q.id).exists():
+            obj = Item.objects.filter(id=q.id).first()
+            obj.status = 2
+            obj.save()
+
+# def button(self, obj):
+#     return mark_safe('<input type="button">')
+# title.short_description = 'Action'
+# title.allow_tags = True
+
 @admin.register(ParentCategory)
 class ParentCategoryModelAdmin(admin.ModelAdmin):
     list_display = ["id", "category", "cat_url", "status", "created"]
@@ -121,15 +148,22 @@ class UrlModelAdmin(admin.ModelAdmin):
     list_display_links = ["short_url"]
     list_filter = ["updated", "created"]
     search_fields = ["short_url", "status"]
+    actions = [set_to_draft, set_to_scraped]
     class Meta:
         model = Url
 
 @admin.register(Item)
 class ItemModelAdmin(admin.ModelAdmin):
-    list_display = ["id", "title", "status", "condition", "created"]
+    # list_display = ("id", "title", "status", "formatted_amount", "condition", "created", button)
+    list_display = ["id", "title", "status", "formatted_amount", "condition", "created"]
     list_display_links = ["title"]
     list_filter = ["updated", "created"]
     search_fields = ["title", "status"]
+    actions = [set_to_item_created]
+
+    def formatted_amount(self, obj):
+        return "IDR. %s%s" % (intcomma(int(obj.price)), ("%0.2f" % obj.price)[-3:])
+
     class Meta:
         model = Item
 

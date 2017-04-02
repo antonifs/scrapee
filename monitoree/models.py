@@ -22,9 +22,12 @@ URL_STATUS_CHOICES = (
 )
 
 ITEM_STATUS_CHOICES = (
-    (0, True),
-    (2, 'Scraped'),
-    (3, 'Ignore'),
+    (0, 'New'),
+    (1, 'Scraped'),
+    (2, 'Item Created'),
+    (3, 'Image Downloaded'),
+    (4, 'Image Uploaded'),
+    (5, 'Completed'),
 )
 
 
@@ -110,6 +113,7 @@ class Item(models.Model):
     title = models.CharField(max_length=255)
     url = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    sku = models.CharField(max_length=255, blank=True, null=True)
     category = models.ForeignKey(Category, blank=True, null=True)
     category_raw = models.CharField(max_length=255, blank=True, null=True)
     sub_category_raw = models.CharField(max_length=255, blank=True, null=True)
@@ -129,7 +133,7 @@ class Item(models.Model):
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
     is_image_scraped = models.BooleanField()
-    directory = models.CharField(null=True, max_length=255)
+    directory = models.CharField(max_length=255, null=True, blank=True)
     image_name_1 = models.CharField(max_length=255, blank=True, null=True)
     image_name_2 = models.CharField(max_length=255, blank=True, null=True)
     image_name_3 = models.CharField(max_length=255, blank=True, null=True)

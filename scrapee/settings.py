@@ -163,3 +163,11 @@ MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media")
 
 # API_DOMAIN = 'https://tinkerlust.com/'
 API_DOMAIN = 'http://tnklst.click/'
+API_ADD_IMAGE = 'internalapi/scraper/addimage'
+API_CREATE_ITEM = 'internalapi/scraper/createitem'
+API_GET_ATTRIBUTESET = 'internalapi/scraper/attributeset'
+API_GET_TOKEN = 'internalapi/oauth2/punten'
+API_GET_BRAND = 'internalapi/scraper/searchbrand'
+
+CLIENT_ID = '87e7fd65fe9d937690b78da26971914a'
+CLIENT_SECRET = 'ccc7eab1a464cec1cb8658adb883df31'
