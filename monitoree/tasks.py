@@ -92,15 +92,27 @@ def scraper_mage_upload():
         }
 
         att_set = attribute_set[str(item.category_raw)]
-        attributeset = helpers.get_all_attributeset(token['access_token'])
+        attributeset = helpers.get_all_attributeset(access_token)
         att_set_id = attributeset['data'][att_set]
 
-        url_search_brand =  settings.API_DOMAIN + "internalapi/scraper/searchbrand?brand="+ str(item.brand) +"&access_token="+ access_token
-        logger.info("URL Brand: %s" % url_search_brand)
-        brand_obj = requests.get(url_search_brand)
-        brand = brand_obj.json()
-        logger.info("Brand: %s" % brand)
-        brand_id = brand['data'][str(item.brand)]
+        # get Brand
+
+
+        brand_raw = item.brand.encode('utf-8')
+        logger.info("Brand: %s" % brand_raw)
+        brand = helpers.get_brand_id(str(brand_raw), str(access_token))
+        logger.info("Brand: %s" % brand['data'])
+
+        brand_id = ""
+        for key, val in brand['data'].iteritems():
+            brand_id = val
+
+        # get Category
+        category = helpers.get_category_id(str(item.category_raw), access_token)
+        sub_category = helpers.get_category_id(str(item.sub_category_raw), access_token)
+
+        # get source
+        source = helpers.get_source(str(item.url))
 
         data = {
                 'name'              : item.title,
@@ -114,10 +126,10 @@ def scraper_mage_upload():
                 'vendor_category'   : 2501, # Rainbob -> bobobo
                 'fabric'            : 3,
                 'condition'         : 2,
-                'category_1'        : att_set_id,
-                'category_2'        : 5,
+                'category_1'        : category['data'],
+                'category_2'        : sub_category['data'],
                 'brand_id'          : brand_id,
-                'source'            : 'bobobobo',
+                'source'            : source,
                 'access_token'      : access_token,
         }
 

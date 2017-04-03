@@ -53,6 +53,12 @@ def upload_product(data):
     r = requests.post(url, data=data)
     return r.json()
 
+def get_category_id(category, token):
+    url = settings.API_DOMAIN + settings.API_GET_CATEGORY + '?category_name=' + category + '' \
+            '&access_token=' + token
+    r = requests.get(url)
+    return r.json()
+
 def get_brand_id(brand, token):
     url = settings.API_DOMAIN + settings.API_GET_BRAND + '?brand=' + brand + '' \
             '&access_token=' + token
@@ -68,6 +74,14 @@ def upload_images(data):
 def get_image_extention(original_path):
     return str(original_path.split("/")[-1]).split(".")[-1]
 
+# source of website scraped
+def get_source(url):
+    return url.split("/")[2]
+
+def get_brand_id(brand, token):
+    url = settings.API_DOMAIN + settings.API_GET_BRAND  +"?brand="+ brand +"&access_token="+ token
+    r = requests.get(url)
+    return r.json()
 
 # the name consists of SKU_number.extension, extension taken from original extension file
 def get_new_name(sku, original_path, number):

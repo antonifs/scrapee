@@ -154,10 +154,9 @@ class UrlModelAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemModelAdmin(admin.ModelAdmin):
-    # list_display = ("id", "title", "status", "formatted_amount", "condition", "created", button)
-    list_display = ["id", "title", "status", "formatted_amount", "condition", "created"]
+    list_display = ["id", "title", "status", "sku", "formatted_amount", "created"]
     list_display_links = ["title"]
-    list_filter = ["updated", "created"]
+    list_filter = ["status", "updated", "created"]
     search_fields = ["title", "status"]
     actions = [set_to_item_created]
 
