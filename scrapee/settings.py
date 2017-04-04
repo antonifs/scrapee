@@ -133,6 +133,15 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Database
+# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
@@ -156,16 +165,6 @@ if MODE == 'production':
     CLIENT_ID = '8b36d9fe60232d9bdfc10ae3807e5b4d'
     CLIENT_SECRET = '67b7aa0236c081cb095f964ead4d6e1b'
 
-    # Database
-    # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
-    # DATABASES = {
-    #     'default': {
-    #         'ENGINE': 'django.db.backends.sqlite3',
-    #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    #     }
-    # }
-
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -184,13 +183,6 @@ else:
     CLIENT_SECRET = 'ccc7eab1a464cec1cb8658adb883df31'
     # Database
     # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
-    # DATABASES = {
-    #     'default': {
-    #         'ENGINE': 'django.db.backends.sqlite3',
-    #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    #     }
-    # }
 
     DATABASES = {
         'default': {
