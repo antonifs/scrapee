@@ -168,14 +168,13 @@ if MODE == 'production':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'scrapee',
+            'NAME': 'scrapin2',
             'USER': 'root',
-            'PASSWORD': 'cfadf803a2953d94f110560995083d89',
-            'HOST': 'localhost',
+            'PASSWORD': 'root',
+            'HOST': '127.0.0.1',
             'PORT': '3306',
         }
     }
-
 
 else:
     API_DOMAIN = 'http://tnklst.click/'
