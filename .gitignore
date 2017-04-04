@@ -1,1 +1,4 @@
-/scrapee/settings.py
+scrapee/settings.py
+monitoree/migrations
+scrapee/*.pyc
+monitoree/*.pyc

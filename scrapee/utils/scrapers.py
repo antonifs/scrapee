@@ -1,6 +1,48 @@
 import requests
 from bs4 import BeautifulSoup
 
+def get_content(url):
+    r = requests.get(url)
+    soup = BeautifulSoup(r.content, "html.parser")
+    product = soup.find_all("div", {"class" : "product-detail-img-row"})
+
+    return product
+
+def get_color(url):
+
+    color = 'Not specified'
+
+    content = get_content(url)
+    try:
+        p = content[0].find_all("p", {"class": "property-content"})
+        if len(p) > 0:
+            color = str(p[1].find_all("option", {"selected":"selected"})[0].text)
+    except:
+        pass
+
+    return color
+
+def get_size(url):
+
+    size = ' '
+
+    content = get_content(url)
+
+    try:
+        product_content_details = content[0].find_all("ul", {"class" : "last_product_property"})
+
+        ls = product_content_details[0].find_all("div", {"class": "bullet-numbering"})
+
+        if len(ls) > 0:
+            sizes = product_content_details[0].find_all("div", {"class": "bullet-numbering"})[1].find_all("ul")[0].find_all("li")
+
+            for l in sizes:
+                size = size + "" + l.text + ", "
+    except:
+        pass
+
+    return str(size).strip()[0:-1]
+
 def scraper_content(url):
     r = requests.get(url)
     soup = BeautifulSoup(r.content, "html.parser")

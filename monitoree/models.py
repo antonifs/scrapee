@@ -42,6 +42,8 @@ class Monitoring(models.Model):
     tag_child = models.CharField(max_length=100, default=None, null=True)
     attr_child = models.CharField(max_length=100, default=None, null=True)
     attr_val_child = models.CharField(max_length=100, default=None, null=True)
+    vendor_attribute = models.IntegerField(null=True, blank=True)
+    vendor_category = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
 
