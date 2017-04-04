@@ -65,6 +65,12 @@ def get_brand_id(brand, token):
     r = requests.get(url)
     return r.json()
 
+def get_category_id(category_name, token):
+    url = settings.API_DOMAIN + settings.API_GET_CATEGORY + '?category_name=' + category_name + '' \
+            '&access_token=' + token
+    r = requests.get(url)
+    return r.json()
+
 def upload_images(data):
     url = settings.API_DOMAIN + settings.API_ADD_IMAGE
     r = requests.post(url, data=data)
@@ -86,3 +92,6 @@ def get_brand_id(brand, token):
 # the name consists of SKU_number.extension, extension taken from original extension file
 def get_new_name(sku, original_path, number):
     return sku.replace(" ", "_") + "_" + number + "." + get_image_extention(original_path)
+
+def get_domain(url):
+    return url.split('/')[0] + '//' + url.split('/')[2]

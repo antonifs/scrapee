@@ -115,6 +115,13 @@ def set_to_item_created(self, request, queryset):
             obj.status = 2
             obj.save()
 
+def set_to_item_scraped(self, request, queryset):
+    for q in queryset:
+        if Item.objects.filter(id=q.id).exists():
+            obj = Item.objects.filter(id=q.id).first()
+            obj.status = 1
+            obj.save()
+
 # def button(self, obj):
 #     return mark_safe('<input type="button">')
 # title.short_description = 'Action'
@@ -154,11 +161,11 @@ class UrlModelAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemModelAdmin(admin.ModelAdmin):
-    list_display = ["id", "title", "status", "sku", "formatted_amount", "created"]
+    list_display = ["id", "title", "status", "sku", "formatted_amount", "condition", "created"]
     list_display_links = ["title"]
-    list_filter = ["status", "updated", "created"]
-    search_fields = ["title", "status"]
-    actions = [set_to_item_created]
+    list_filter = ["status", "created"]
+    search_fields = ["title", "status", "category_raw", "sku", "sub_category_raw"]
+    actions = [set_to_item_created, set_to_item_scraped]
 
     def formatted_amount(self, obj):
         return "IDR. %s%s" % (intcomma(int(obj.price)), ("%0.2f" % obj.price)[-3:])
