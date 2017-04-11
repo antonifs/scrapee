@@ -15,16 +15,6 @@ import djcelery
 
 djcelery.setup_loader()
 
-BROKER_URL = "amqp://tinkerlust:tinkerlust@localhost:5672/tinkerlust"
-
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Jakarta'
-
-CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
-
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,7 +29,7 @@ SECRET_KEY = '^9cluswclp6houdcd2j%!t*n3bjhm75!earhfd8_jwu!94%vcb'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-MODE = 'production'
+MODE = 'dev'
 
 ALLOWED_HOSTS = []
 
@@ -161,6 +151,18 @@ API_GET_BRAND = 'internalapi/scraper/searchbrand'
 API_GET_CATEGORY = 'internalapi/scraper/categoryid'
 
 if MODE == 'production':
+
+    BROKER_URL = "amqp://tinkerlust:c4mYJrLVauh9rASB@localhost:5672/tinkerlust"
+
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'Asia/Jakarta'
+
+    CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+    CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+
     API_DOMAIN = 'http://tinkerlust.com/'
     CLIENT_ID = '8b36d9fe60232d9bdfc10ae3807e5b4d'
     CLIENT_SECRET = '67b7aa0236c081cb095f964ead4d6e1b'
@@ -168,15 +170,27 @@ if MODE == 'production':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'scrapin2',
+            'NAME': 'scrapee2',
             'USER': 'root',
-            'PASSWORD': 'root',
-            'HOST': '127.0.0.1',
+            'PASSWORD': 'hFQTCCVMpGTjvV8d',
+            'HOST': 'localhost',
             'PORT': '3306',
         }
     }
 
 else:
+
+    BROKER_URL = "amqp://tinkerlust:tinkerlust@localhost:5672/tinkerlust"
+
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'Asia/Jakarta'
+
+    CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+    CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+
     API_DOMAIN = 'http://tnklst.click/'
     CLIENT_ID = '87e7fd65fe9d937690b78da26971914a'
     CLIENT_SECRET = 'ccc7eab1a464cec1cb8658adb883df31'
