@@ -53,6 +53,11 @@ def upload_product(data):
     r = requests.post(url, data=data)
     return r.json()
 
+def update_product(data):
+    url = settings.API_DOMAIN + settings.API_UPDATE_ITEM
+    r = requests.post(url, data=data)
+    return r.json()
+
 def get_category_id(category, token):
     url = settings.API_DOMAIN + settings.API_GET_CATEGORY + '?category_name=' + category + '' \
             '&access_token=' + token
@@ -65,8 +70,14 @@ def get_brand_id(brand, token):
     r = requests.get(url)
     return r.json()
 
-def get_category_id(category_name, token):
-    url = settings.API_DOMAIN + settings.API_GET_CATEGORY + '?category_name=' + category_name + '' \
+def get_material_id(material_name, token):
+    url = settings.API_DOMAIN + settings.API_GET_MATERIAL + '?material=' + material_name + '' \
+            '&access_token=' + token
+    r = requests.get(url)
+    return r.json()
+
+def get_fabric_id(fabric_name, token):
+    url = settings.API_DOMAIN + settings.API_GET_FABRIC + '?fabric=' + fabric_name + '' \
             '&access_token=' + token
     r = requests.get(url)
     return r.json()

@@ -18,7 +18,7 @@ CATEGORY_STATUS_CHOICES = (
 URL_STATUS_CHOICES = (
     (1, 'Draft'),
     (2, 'Scraped'),
-    (3, 'Ignore'),
+    (3, 'Stoped'),
 )
 
 ITEM_STATUS_CHOICES = (
@@ -44,6 +44,7 @@ class Monitoring(models.Model):
     attr_val_child = models.CharField(max_length=100, default=None, null=True)
     vendor_attribute = models.IntegerField(null=True, blank=True)
     vendor_category = models.IntegerField(null=True, blank=True)
+    attribute_ids = models.CharField(max_length=100, default=None, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
 
@@ -57,13 +58,15 @@ class Category(models.Model):
     cat_url = models.CharField(max_length=1000)
     status = models.IntegerField(choices=URL_STATUS_CHOICES)
     monitoring = models.ForeignKey(Monitoring, blank=True, null=True)
-    block_tag = models.CharField(max_length=100, null=True)
-    block_attribute = models.CharField(max_length=100, null=True)
-    block_value = models.CharField(max_length=100, null=True)
-    item_tag = models.CharField(max_length=100, null=True)
-    item_attribute = models.CharField(max_length=100, null=True)
-    item_value = models.CharField(max_length=100, null=True)
-    total_pagination = models.IntegerField(null=True)
+    block_tag = models.CharField(max_length=100, null=True, blank=True)
+    block_attribute = models.CharField(max_length=100, null=True, blank=True)
+    block_value = models.CharField(max_length=100, null=True, blank=True)
+    item_tag = models.CharField(max_length=100, null=True, blank=True)
+    item_attribute = models.CharField(max_length=100, null=True, blank=True)
+    item_value = models.CharField(max_length=100, null=True, blank=True)
+    total_pagination = models.IntegerField(null=True, blank=True)
+    query_string = models.CharField(max_length=100, null=True, blank=True)
+    current_pagination = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
 
@@ -115,10 +118,13 @@ class Item(models.Model):
     title = models.CharField(max_length=255)
     url = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    discount = models.IntegerField(blank=True, null=True)
     sku = models.CharField(max_length=255, blank=True, null=True)
     category = models.ForeignKey(Category, blank=True, null=True)
     category_raw = models.CharField(max_length=255, blank=True, null=True)
     sub_category_raw = models.CharField(max_length=255, blank=True, null=True)
+    sub_category_raw_2 = models.CharField(max_length=255, blank=True, null=True)
+    new_category = models.CharField(max_length=255, blank=True, null=True)
     condition = models.CharField(max_length=255, blank=True, null=True)
     image_1 = models.CharField(max_length=255)
     image_2 = models.CharField(max_length=255)
@@ -127,6 +133,7 @@ class Item(models.Model):
     image_5 = models.CharField(max_length=255, blank=True, null=True)
     color = models.CharField(max_length=255, blank=True, null=True)
     fabric = models.CharField(max_length=255, blank=True, null=True)
+    size = models.TextField(blank=True, null=True)
     currency = models.IntegerField()
     is_scraped = models.BooleanField()
     is_sold = models.IntegerField(blank=True, null=True)

@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/1.9/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
 """
-
 import os
 import djcelery
 
@@ -24,12 +23,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '^9cluswclp6houdcd2j%!t*n3bjhm75!earhfd8_jwu!94%vcb'
+SECRET_KEY = '5hy!sbx6pi(!w%s@m@^1%wogld__&ieip^d$$@t**yui*p-jw&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-MODE = 'dev'
+MODE = 'production'
 
 ALLOWED_HOSTS = []
 
@@ -45,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'monitoree',
     'djcelery',
-    'dashing',
+    'messaging',
+    # 'dashing',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -149,10 +149,14 @@ API_GET_ATTRIBUTESET = 'internalapi/scraper/attributeset'
 API_GET_TOKEN = 'internalapi/oauth2/punten'
 API_GET_BRAND = 'internalapi/scraper/searchbrand'
 API_GET_CATEGORY = 'internalapi/scraper/categoryid'
+API_UPDATE_ITEM = 'internalapi/scraper/updateitem'
+API_GET_MATERIAL = 'internalapi/scraper/searchmaterial'
+API_GET_FABRIC = 'internalapi/scraper/searchfabric'
 
 if MODE == 'production':
 
-    BROKER_URL = "amqp://tinkerlust:c4mYJrLVauh9rASB@localhost:5672/tinkerlust"
+    # BROKER_URL = "amqp://tinkeradmin:c4mYJrLVauh9rASB@tinkerlust.com:5672/tinkerlust"
+    BROKER_URL = "amqp://tinkerlust:tinkerlust@localhost:5672/tinkerlust"
 
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'
@@ -170,13 +174,25 @@ if MODE == 'production':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'scrapee2',
+            'NAME': 'scraping2',
             'USER': 'root',
-            'PASSWORD': 'hFQTCCVMpGTjvV8d',
-            'HOST': 'localhost',
+            'PASSWORD': 'root',
+            'HOST': '127.0.0.1',
             'PORT': '3306',
         }
     }
+
+
+    # DATABASES = {
+    #     'default': {
+    #         'ENGINE': 'django.db.backends.mysql',
+    #         'NAME': 'scrapee2',
+    #         'USER': 'root',
+    #         'PASSWORD': 'hFQTCCVMpGTjvV8d',
+    #         'HOST': 'localhost',
+    #         'PORT': '3306',
+    #     }
+    # }
 
 else:
 

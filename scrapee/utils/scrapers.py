@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import re
 
 def get_content(url):
     r = requests.get(url)
@@ -18,30 +19,82 @@ def get_color(url):
         if len(p) > 0:
             color = str(p[1].find_all("option", {"selected":"selected"})[0].text)
     except:
-        pass
+        passexit
 
     return color
 
 def get_size(url):
 
-    size = ' '
+    size = ''
+    content = get_content(url)
+    string = content[0].find_all("div", {"id": "size"})
+    try:
+        size = string[0].find_all("table")
+        size = str(size[0]).replace("\n", "").replace(" ", "")
+    except:
+        match = re.findall(r'[\\n]*(\w+)\s*:\s*(\d+\s+\w+)', str(string[0]))
+        res = [m[0] + " " + m[1] for m in match]
+        size = str(", ".join(res))
+    return size
 
+def get_discount(url):
+    discount = 0
     content = get_content(url)
 
     try:
-        product_content_details = content[0].find_all("ul", {"class" : "last_product_property"})
-
-        ls = product_content_details[0].find_all("div", {"class": "bullet-numbering"})
-
-        if len(ls) > 0:
-            sizes = product_content_details[0].find_all("div", {"class": "bullet-numbering"})[1].find_all("ul")[0].find_all("li")
-
-            for l in sizes:
-                size = size + "" + l.text + ", "
+        data = content[0].find_all("span", {"class":"specials"})
+        disc = re.findall(r"\d+", str(data[1].text))
+        discount = disc[0]
     except:
         pass
 
-    return str(size).strip()[0:-1]
+    return discount
+
+def get_fabric(url):
+    fabric = ""
+    content = get_content(url)
+
+    try:
+        data = content[0].find_all("span", {"class":"specials"})
+        disc = re.findall(r"\d+", str(data[1].text))
+        discount = disc[0]
+    except:
+        pass
+
+    return discount
+
+def is_sold(url):
+    stock = 1
+    content = get_content(url)
+
+    try:
+        data = content[0].find_all("button", {"disabled": "disabled"})
+
+        if "out of Stock" in data[0].text:
+            stock = 0
+        else:
+            stock = 1
+    except:
+        pass
+
+    return stock
+
+def get_subcategory(url, tag):
+    content = get_content(url)
+
+    try:
+        data = content[0].find_all("", {"disabled": "disabled"})
+
+        if "out of Stock" in data[0].text:
+            stock = 0
+        else:
+            stock = 1
+    except:
+        pass
+
+    return stock
+
+
 
 def scraper_content(url):
     r = requests.get(url)
