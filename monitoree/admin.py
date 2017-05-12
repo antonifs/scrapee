@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.humanize.templatetags.humanize import intcomma
 import urllib, json
 
-from .helpers import crawl, crawl2
+from scrapee.utils.scrapers import *
 
 def fetch_categories(self, request, queryset):
     monitoring = queryset.first()

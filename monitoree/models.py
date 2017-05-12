@@ -45,6 +45,9 @@ class Monitoring(models.Model):
     vendor_attribute = models.IntegerField(null=True, blank=True)
     vendor_category = models.IntegerField(null=True, blank=True)
     attribute_ids = models.CharField(max_length=100, default=None, blank=True, null=True)
+    margin = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    upper_limit = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    lower_limit = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, auto_now=False)
     updated = models.DateTimeField(auto_now_add=False, auto_now=True)
 
@@ -112,7 +115,6 @@ class Url(models.Model):
     def __unicode__(self):
         return self.url
 
-
 class Item(models.Model):
 
     title = models.CharField(max_length=255)
@@ -135,6 +137,7 @@ class Item(models.Model):
     fabric = models.CharField(max_length=255, blank=True, null=True)
     size = models.TextField(blank=True, null=True)
     currency = models.IntegerField()
+    rate = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     is_scraped = models.BooleanField()
     is_sold = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(choices=ITEM_STATUS_CHOICES)

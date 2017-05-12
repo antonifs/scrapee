@@ -156,7 +156,7 @@ API_GET_FABRIC = 'internalapi/scraper/searchfabric'
 if MODE == 'production':
 
     # BROKER_URL = "amqp://tinkeradmin:c4mYJrLVauh9rASB@tinkerlust.com:5672/tinkerlust"
-    BROKER_URL = "amqp://tinkerlust:tinkerlust@localhost:5672/tinkerlust"
+    BROKER_URL = "amqp://tinkeradmin:tinkeradmin@localhost:5672/tinkerlust"
 
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'
@@ -196,7 +196,7 @@ if MODE == 'production':
 
 else:
 
-    BROKER_URL = "amqp://tinkerlust:tinkerlust@localhost:5672/tinkerlust"
+    BROKER_URL = "amqp://tinkeradmin:tinkeradmin@localhost:5672/tinkerlust"
 
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'

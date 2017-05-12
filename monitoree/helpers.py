@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from scrapee import settings
+import urllib, json
 
 def crawl(domain, tag, attr, attr_val):
     r = requests.get(domain)
@@ -21,14 +22,6 @@ def crawl2(domain,
     res = soup.find_all(block_tag, {block_attribute : block_value})
     result = res[0].find_all(item_tag, {item_attribute : item_value})
     return result
-
-
-def download_image(src):
-    pass
-
-def download_content(url):
-    pass
-
 
 # this tool will replace all formated-money with type string into a proper decimal
 def convert_money(money):
@@ -106,3 +99,12 @@ def get_new_name(sku, original_path, number):
 
 def get_domain(url):
     return url.split('/')[0] + '//' + url.split('/')[2]
+
+
+# Styletribute helper
+def get_conversion_rate(url="https://api.styletribute.com/currencies"):
+    response = urllib.urlopen(url)
+    data = json.loads(response.read())
+    return [i['rate'] for i in data if i['code'] == 'IDR'][0]
+
+

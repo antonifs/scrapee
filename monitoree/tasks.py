@@ -1,12 +1,12 @@
 from celery.task.schedules import crontab
 from celery.decorators import periodic_task
-from scrapee.utils import scrapers
+from scrapee.utils.scrapers import *
 from celery.utils.log import get_task_logger
 from scrapee import settings
-
+from bs4 import BeautifulSoup
+# from helpers import *
 
 import requests
-from helpers import *
 import os
 import urllib, json
 
@@ -135,15 +135,20 @@ def scraper_content():
     '''
     url = Url.objects.filter(status=1).order_by('id').first()
 
+    domain = item.url.split("/")[2]
+    margin = Monitoring.objects.filter(domain__contains=domain).first().margin
+
     if url:
         try:
             # scrap the html content
-            object = scrapers.scraper_content(url.url)
+            object = scraper_content(url.url)
+            price = get_price(url.url)
+            selling_price = price + margin
 
             category = url.url.split("/")[-3:-2]
             sub_category = url.url.split("/")[-2:-1]
 
-            size = scrapers.get_size(str(url.url))
+            size = get_size(str(url.url))
 
             if not Item.objects.filter(url=str(url.url)).exists():
 
@@ -151,7 +156,7 @@ def scraper_content():
 
                     Item(title = object['product_name'],
                         url = str(url.url),
-                        price = convert_money(object["price"]),
+                        price = selling_price,
                         status = 1,
                         currency = 1,
                         size = size,
@@ -171,7 +176,7 @@ def scraper_content():
 
                 # Khusus bobobo hanya simpan item yg discountnya > 40%
                 else:
-                    discount = scrapers.get_discount(str(url.url))
+                    discount = get_discount(str(url.url))
                     logger.info("BOBO: Discount %s " % discount)
 
                     if int(discount) > 40:
@@ -179,7 +184,7 @@ def scraper_content():
                         # Save the content
                         Item(title = object['product_name'],
                             url = str(url.url),
-                            price = convert_money(object["price"]),
+                            price = selling_price,
                             discount = discount,
                             status = 1,
                             currency = 1,
@@ -227,9 +232,9 @@ def scraper_content_styletributes():
     - Update url object status to scraped (2)
     '''
 
-    import urllib, json
+    url = Url.objects.filter(status=1).filter(url__startswith='https://api.styletribute.com/').first()
 
-    url = Url.objects.filter(status=1).filter(url__startswith='https://styletribute.com/').first()
+    margin = Monitoring.objects.filter(domain__contains="styletribute").first().margin
 
     logger.info("URL: %s", str(url.url))
 
@@ -237,6 +242,9 @@ def scraper_content_styletributes():
         try:
             response = urllib.urlopen(str(url.url))
             data = json.loads(response.read())
+            rate = get_conversion_rate()
+
+            selling_price = (rate * data['price']) + float(margin)
 
             if not Item.objects.filter(url=str(url.url)).exists():
 
@@ -251,18 +259,18 @@ def scraper_content_styletributes():
                 # Save the content
                 Item(title = str(data['name']),
                     url = str(url.url),
-                    price = convert_money(object["price"]),
-                    discount = discount,
+                    price = selling_price,
                     status = 1,
                     currency = 1,
+                    rate = rate,
                     size = data['shortDescription'],
                     image_1 = image_1,
                     image_2 = image_2,
                     image_3 = image_3,
                     image_4 = image_4,
                     image_5 = image_5,
-                    category_raw = str(url.category),
-                    sub_category_raw = str(url.category),
+                    category_raw = str(url.category.category),
+                    sub_category_raw = str(url.category.category),
                     is_sold = 1,
                     brand = data['designer'],
                     condition = data["condition"],
@@ -286,7 +294,6 @@ def scraper_content_styletributes():
 
     logger.info("Scraping content end")
 
-
 @periodic_task(run_every=(crontab(hour="*", minute="3", day_of_week="*")))
 def scraper_mage_upload():
 
@@ -298,30 +305,32 @@ def scraper_mage_upload():
     if item:
         logger.info("Uploading is started %s " % (item.title) )
 
-        token = get_token()
+        access_token = get_token()['access_token']
 
-        logger.info("token: %s" % token)
-
-        access_token = token['access_token']
+        logger.info("token: %s" % access_token)
 
         # Convert attributeset from target standard to tinkerlust standard
         attribute_set = {
             'bags' : 'Tas',
             'accessories' : 'Aksesoris',
+            'jewellery' : 'Aksesoris',
             'shoes' : 'Sepatu',
             'clothing': 'Pakaian (atasan)',
         }
 
-        try:
-            att_set = attribute_set[str(item.category_raw)]
-        except:
-            pass
-
-        if att_set == u'Default':
+        if "bobobobo" in item.url:
             try:
-                att_set = attribute_set[str(item.sub_category_raw)]
+                att_set = attribute_set[str(item.category_raw)]
             except:
                 pass
+
+            if att_set == u'Default':
+                try:
+                    att_set = attribute_set[str(item.sub_category_raw)]
+                except:
+                    pass
+        else:
+            pass
 
         attributeset = get_all_attributeset(access_token)
         att_set_id = attributeset['data'][att_set]
@@ -330,53 +339,64 @@ def scraper_mage_upload():
 
         domain = get_domain(item.url)
 
-        source = Monitoring.objects.filter(domain=domain).first()
+        source = Monitoring.objects.filter(domain__contains=domain).first()
 
-        category_id = str(get_category_id(att_set, access_token)['data'][0])
+        if (item.price <= source.upper_limit) and (item.price >= source.lower_limit):
 
-        # get random vendor
-        from random import randint
-        attribute = source.attribute_ids.split(",")[randint(0,4)].split('#')
+            if str(item.sub_category_raw) == "Pumps":
+                sub_category_raw = "Heels"
+            elif str(item.sub_category_raw) == "Clutch Bags":
+                sub_category_raw = "Bags"
+            else:
+                sub_category_raw = item.sub_category_raw
 
-        data = {
-                'name'              : str(item.title),
-                'attribute_set_id'  : str(att_set_id),
-                'weight'            : 3,
-                'color'             : [9,7],
-                'price'             : item.price,
-                'description'       : '-',
-                'short_description' : '-',
-                'vendor_attribute'  : str(attribute[1]),
-                'vendor_category'   : str(attribute[0]),
-                'fabric'            : 3,
-                'condition'         : 2,
-                'category'          : category_id,
-                'brand_id'          : brand_id,
-                'source'            : str(source.domain),
-                'access_token'      : str(access_token),
-        }
+            category_id = str(get_category_id(sub_category_raw, access_token)['data'][0])
 
-        logger.info("Data: %s " % data)
+            # get random vendor
+            from random import randint
+            attribute = source.attribute_ids.split(",")[randint(0,3)].split('#')
 
-        res = upload_product(data)
+            data = {
+                    'name'              : str(item.title),
+                    'attribute_set_id'  : str(att_set_id),
+                    'weight'            : 3,
+                    'color'             : [9,7],
+                    'price'             : item.price,
+                    'description'       : '-',
+                    'short_description' : '-',
+                    'vendor_attribute'  : str(attribute[1]),
+                    'vendor_category'   : str(attribute[0]),
+                    'fabric'            : 3,
+                    'condition'         : 2,
+                    'category'          : category_id,
+                    'brand_id'          : brand_id,
+                    'source'            : str(source.domain),
+                    'access_token'      : str(access_token),
+            }
 
-        logger.info("%s has been upload to Magento" % res)
+            logger.info("Data: %s " % data)
 
-        item.sku = str(res['data'][u'sku'])
-        item.status = 2
-        item.save()
+            res = upload_product(data)
+
+            item.status = 2
+            item.sku = res['data']['sku']
+            item.save()
+
+            logger.info("%s has been upload to Magento" % res)
+        else:
+            item.status = 5
+            item.save()
+
     else:
         logger.info("Nothing can be uploaded")
 
 @periodic_task(run_every=(crontab(hour="*", minute="*", day_of_week="*")))
 def scraper_image_download():
-    import urllib
-    import os
 
     # Get item target, sort item ascending (oldest) then get the top one
     item = Item.objects.filter(status=2).order_by('id').first()
 
-    if item:
+    if item.sku != None:
 
         # number image(s) want to download
         img_num = 0
@@ -457,7 +477,10 @@ def scraper_image_download():
         item.save()
 
         logger.info("%s is downloaded." % item)
-
+    else:
+        item.status = 5
+        item.save()
+        logger.info("%s is ignored." % item)
 
 @periodic_task(run_every=(crontab(hour="*", minute="*", day_of_week="*")))
 def scraper_upload_images():
@@ -505,7 +528,7 @@ def scraper_upload_images():
         Staging server: local upload to tinkerlust.com
         --------------------------------------------------------------------------------------------------
         '''
-        local_src = '/Users/antonifs/Documents/tinkerlust/store_scraper/media/import/'
+        local_src = '~/Docs/tinkerlust/store_scraper/media/import/'
         origin = local_src + item.directory
         target = '/var/www/html/magento/media/import/'
         os.system('rsync -r -v -e "ssh -i $HOME/tinkerlust" '+ str(origin) +' root@tinkerlust.com:' + str(target) + '/')
@@ -539,20 +562,28 @@ def scraper_item_update():
     from datetime import datetime, timedelta
 
     # Update the item in Magento
-    token = get_token()
-    access_token = token['access_token']
+    access_token = get_token()['access_token']
 
     time_threshold = datetime.now() - timedelta(hours=2)
 
-    # Get item which the item is created in Magento, and the updated-date is less than today
+    # Get item which the item is created in Magento, and the updated-date is less than today,
+    # order by ID which mean the oldest update
     item = Item.objects.filter(updated__lt=time_threshold).filter(status__gte=2).order_by('id').first()
+
+    # get the margin
+    domain = item.url.split("/")[2]
+    source = Monitoring.objects.filter(domain__contains=domain).first()
+    margin = source.margin
+    lower_limit = source.lower_limit
+    upper_limit = source.upper_limit
 
     if item:
 
         title = item.title.replace(" ", "+")
         url = "http://www.bobobobo.com/page/women?q=" + title
 
-        # get the sub category
+        # get the sub category of this current item, since the sub category information isn't
+        # available in product detail page, thus, we will grab it from category page
         r = requests.get(url)
         soup = BeautifulSoup(r.content, "html.parser")
 
@@ -562,6 +593,8 @@ def scraper_item_update():
 
         categories = get_category_id(category, access_token)['data']
 
+        # If the api categories return more than one items, then the first item considered as category and
+        # sub category for the second respectively.
         if len(categories) > 1:
             category_id = str(categories[0])
             sub_category_id = str(categories[1])
@@ -569,45 +602,51 @@ def scraper_item_update():
             category_id = str(categories[0])
             sub_category_id = str(categories[0])
 
+        # let's log it in console
         logger.info("Scrape the new properties updated of %s " % item.url)
+
+        # get attributes which will be updated
+        discount = get_discount(item.url)
+        stock = is_sold(item.url)
+        price = get_price(item.url)
+        selling_price = price + margin
 
         try:
             # scrap the html content
-            object = scrapers.scraper_content(item.url)
-            stock = scrapers.is_sold(item.url)
+            object = scraper_content(item.url)
+            stock = is_sold(item.url)
 
             if not "bobobobo.com" in str(item.url):
 
-                # Update the content in local DB
-                obj_url = Item.objects.get(id=item.id)
-                obj_url.price = convert_money(object["price"])
-                obj_url.new_category = category
-                obj_url.stock = stock
-                obj_url.save()
-
-                data = {
-                    'sku' : item.sku,
-                    'price' : convert_money(object["price"]),
-                    'qty' : stock,
-                    'category': category_id,
-                    'subcategory': sub_category_id,
-                    'short_description':str(item.size),
-                    'status': 'true',
-                    'access_token' : str(access_token),
-                }
-
-                logger.info("The data: %s " % data)
-
-                res = update_product(data)
-
-                logger.info("The data: %s has been saved. %s and it's noy bobobobo" % (str(data), str(res)) )
-            else:
-                discount = get_discount(item.url)
-
-                if discount > 40:
+                if (price > lower_limit) and (price <= upper_limit):
                     # Update the content in local DB
                     obj_url = Item.objects.get(id=item.id)
-                    obj_url.price = convert_money(object["price"])
+                    obj_url.price = selling_price
+                    obj_url.new_category = category
+                    obj_url.stock = stock
+                    obj_url.save()
+
+                    data = {
+                        'sku' : item.sku,
+                        'price' : selling_price,
+                        'qty' : stock,
+                        'category': category_id,
+                        'subcategory': sub_category_id,
+                        'short_description':str(item.size),
+                        'status': 'true',
+                        'access_token' : str(access_token),
+                    }
+
+                    logger.info("The data: %s " % data)
+                    res = update_product(data)
+                    logger.info("The data: %s has been saved. %s and it's noy bobobobo" % (str(data), str(res)) )
+
+            else:
+
+                if (discount > 40) and (price > lower_limit) and (price <= upper_limit):
+                    # Update the content in local DB
+                    obj_url = Item.objects.get(id=item.id)
+                    obj_url.price = selling_price
                     obj_url.stock = stock
                     obj_url.save()
 
@@ -617,8 +656,12 @@ def scraper_item_update():
 
                     data = {
                         'sku' : item.sku,
-                        'price' : convert_money(object["price"]),
+                        'price' : selling_price,
                         'qty' : stock,
+                        'category': str(category),
+                        'subcategory': str(category),
+                        'short_description':str(item.size),
+                        'status': 'true',
                         'access_token' : str(access_token),
                     }
 
@@ -629,6 +672,7 @@ def scraper_item_update():
                 else:
                     logger.info("Item %s discount is no longer > 40 percent" % str(data) )
 
+        # if try failed, this could be caused by the product is no longer available
         except:
             logger.info("Exception error")
 
@@ -644,7 +688,8 @@ def scraper_item_update():
                 'category': str(category),
                 'subcategory': str(category),
                 'short_description':str(item.size),
-                'status': 'true',
+                'price': selling_price,
+                'qty' : 0,
                 'access_token' : str(access_token),
             }
 
