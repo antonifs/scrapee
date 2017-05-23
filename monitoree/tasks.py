@@ -550,7 +550,7 @@ def scraper_upload_images():
         item.save()
 
     else:
-        logger.info("No item is uploaded")
+        logger.info("FINISH! All items have been uploaded successfully.")
 
 @periodic_task(run_every=(crontab(hour="*", minute="*", day_of_week="*")))
 def scraper_item_update():
