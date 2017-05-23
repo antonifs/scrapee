@@ -236,8 +236,6 @@ def scraper_content_styletributes():
 
     margin = Monitoring.objects.filter(domain__contains="styletribute").first().margin
 
-    logger.info("URL: %s", str(url.url))
-
     if url:
         try:
             response = urllib.urlopen(str(url.url))
@@ -290,9 +288,7 @@ def scraper_content_styletributes():
         obj_url.status = 2
         obj_url.save()
     else:
-        logger.info("No content can be scraped")
-
-    logger.info("Scraping content end")
+        logger.info("FINISH! no more content can be scraped")
 
 @periodic_task(run_every=(crontab(hour="*", minute="3", day_of_week="*")))
 def scraper_mage_upload():
